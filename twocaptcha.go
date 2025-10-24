@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/justhyped/gocaptcha/internal"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/RealKonik/gocaptcha/internal"
 )
 
 type TwoCaptcha struct {

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/justhyped/gocaptcha/internal"
+	"github.com/RealKonik/gocaptcha/internal"
 )
 
 type AntiCaptcha struct {
