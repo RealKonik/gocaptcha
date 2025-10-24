@@ -135,12 +135,14 @@ func (a *AntiCaptcha) SolveTurnstile(
 	settings *Settings,
 	payload *TurnstilePayload,
 ) (ICaptchaResponse, error) {
-	captchaType := "TurnstileTask"
-	if a.baseUrl == "https://api.anti-captcha.com" {
-		captchaType += "Proxyless"
-	}
-	if a.baseUrl == "https://api.capsolver.com" {
+	var captchaType string
+	switch a.baseUrl {
+	case "https://api.capsolver.com":
 		captchaType = "AntiTurnstileTaskProxyLess"
+	case "https://api.capmonster.cloud":
+		captchaType = "TurnstileTask"
+	case "https://api.anti-captcha.com":
+		captchaType = "TurnstileTaskProxyless"
 	}
 	task := map[string]any{
 		"type":       captchaType,
@@ -225,7 +227,6 @@ func (a *AntiCaptcha) createTask(
 	if err != nil {
 		return "", err
 	}
-
 	var responseAsJSON antiCaptchaCreateResponse
 	if err := json.Unmarshal(respBody, &responseAsJSON); err != nil {
 		return "", err
@@ -234,7 +235,6 @@ func (a *AntiCaptcha) createTask(
 	if responseAsJSON.ErrorID != 0 {
 		return "", errors.New(responseAsJSON.ErrorDescription)
 	}
-
 	switch responseAsJSON.TaskID.(type) {
 	case string:
 		// taskId is a string with CapSolver
@@ -256,6 +256,7 @@ func (a *AntiCaptcha) getTaskResult(
 	type antiCapSolution struct {
 		RecaptchaResponse string `json:"gRecaptchaResponse"`
 		Text              string `json:"text"`
+		Token             string `json:"token"`
 	}
 
 	type resultResponse struct {
@@ -291,7 +292,6 @@ func (a *AntiCaptcha) getTaskResult(
 	if err != nil {
 		return "", err
 	}
-
 	var respJson resultResponse
 	if err := json.Unmarshal(respBody, &respJson); err != nil {
 		return "", err
@@ -309,6 +309,9 @@ func (a *AntiCaptcha) getTaskResult(
 		return respJson.Solution.Text, nil
 	}
 
+	if respJson.Solution.Token != "" {
+		return respJson.Solution.Token, nil
+	}
 	if respJson.Solution.RecaptchaResponse != "" {
 		return respJson.Solution.RecaptchaResponse, nil
 	}

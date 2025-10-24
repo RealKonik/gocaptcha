@@ -20,3 +20,19 @@ func TestNewCaptchaSolver(t *testing.T) {
 
 	t.Log(resp.Solution()) // gets the answer or recaptcha token etc
 }
+
+func TestNewCaptchaSolverTurnstile(t *testing.T) {
+	ctx := context.Background()
+
+	cs := NewCaptchaSolver(NewCustomAntiCaptcha("https://api.anti-captcha.com", "6a0ec931a8e86b6a8bf5ac22c785f938"))
+
+	resp, err := cs.SolveTurnstile(ctx, &TurnstilePayload{
+		EndpointUrl: "https://www.popmart.com/au/store-apppointment-event/your-reservationInfo",
+		EndpointKey: "0x4AAAAAABjS33Y7wk11lsWy",
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(resp.Solution()) // gets the answer or recaptcha token etc
+}
