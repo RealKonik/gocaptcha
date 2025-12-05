@@ -3,19 +3,20 @@ An API wrapper for popular captcha solvers such as AntiCaptcha and 2Captcha in G
 
 ## Installation
 ```sh
-go get github.com/justhyped/gocaptcha
+go get github.com/RealKonik/gocaptcha
 ```
 
 ## Support
-| Type          | 2Captcha | AntiCaptcha |
-|:--------------|:---------|:------------|
- | RecaptchaV2   | ✅        | ✅           |
- | RecaptchaV3   | ✅        | ✅           |
-| Image Captcha | ✅        | ✅           |
-| HCaptcha      | ✅        | ✅           |
-| Turnstile     | ✅        | ✅           |
+| Type                   | 2Captcha  | AntiCaptcha | CapMonster | CapSolver |
+|:-----------------------|:----------|:------------|:------------|:---------|
+| RecaptchaV2            | ✅        | ✅           | ✅          |          |
+| RecaptchaV3Proxy       | ✅        | ✅           | ✅          | ✅       |
+| RecaptchaV3ProxyLess   | ✅        | ✅           | ✅          | ✅       |
+| Image Captcha          | ✅        | ✅           | ✅          | ✅       |
+| HCaptcha               | ✅        | ✅           | ✅          | ✅       |
+| Turnstile              | ✅        | ✅           | ✅          | ✅       |
 
-Software like XEVil and CapMonster are also supported. You can also implement your own provider by 
+Software like XEVil and others are also supported. You can also implement your own provider by 
 using the `IProvider` interface.
 
 ## Usage
