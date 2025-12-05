@@ -89,7 +89,7 @@ func (a *AntiCaptcha) SolveRecaptchaV2(
 	return result, nil
 }
 
-func (a *AntiCaptcha) SolveRecaptchaV3(
+func (a *AntiCaptcha) SolveRecaptchaV3Proxyless(
 	ctx context.Context,
 	settings *Settings,
 	payload *RecaptchaV3Payload,
@@ -99,6 +99,32 @@ func (a *AntiCaptcha) SolveRecaptchaV3(
 		"websiteURL": payload.EndpointUrl,
 		"websiteKey": payload.EndpointKey,
 		"minScore":   payload.MinScore,
+	}
+
+	result, err := a.solveTask(ctx, settings, task)
+	if err != nil {
+		return nil, err
+	}
+
+	result.reportBad = a.report("/reportIncorrectRecaptcha", result.taskId, settings)
+	result.reportGood = a.report("/reportCorrectRecaptcha", result.taskId, settings)
+	return result, nil
+}
+
+func (a *AntiCaptcha) SolveRecaptchaV3Proxy(
+	ctx context.Context,
+	settings *Settings,
+	payload *RecaptchaV3Payload,
+) (ICaptchaResponse, error) {
+	if payload.Proxy == "" {
+		return nil, errors.New("proxy is required for SolveRecaptchaV3Proxy")
+	}
+	task := map[string]any{
+		"type":       "RecaptchaV3Task",
+		"websiteURL": payload.EndpointUrl,
+		"websiteKey": payload.EndpointKey,
+		"minScore":   payload.MinScore,
+		"proxy":      payload.Proxy,
 	}
 
 	result, err := a.solveTask(ctx, settings, task)

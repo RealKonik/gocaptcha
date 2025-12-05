@@ -77,7 +77,12 @@ func (t *TwoCaptcha) SolveRecaptchaV2(ctx context.Context, settings *Settings, p
 	return result, nil
 }
 
-func (t *TwoCaptcha) SolveRecaptchaV3(ctx context.Context, settings *Settings, payload *RecaptchaV3Payload) (ICaptchaResponse, error) {
+func (t *TwoCaptcha) SolveRecaptchaV3Proxy(ctx context.Context, settings *Settings, payload *RecaptchaV3Payload) (ICaptchaResponse, error) {
+	return nil, errors.New("proxy for 2cap not implemented")
+
+}
+
+func (t *TwoCaptcha) SolveRecaptchaV3Proxyless(ctx context.Context, settings *Settings, payload *RecaptchaV3Payload) (ICaptchaResponse, error) {
 	task := &url.Values{}
 	task.Set("method", "userrecaptcha")
 	task.Set("version", "v3")

@@ -34,12 +34,20 @@ func (c *CaptchaSolver) SolveRecaptchaV2(ctx context.Context, payload *Recaptcha
 	return c.provider.SolveRecaptchaV2(ctx, c.settings, payload)
 }
 
-// SolveRecaptchaV3 uses the provider to fetch the solution of a captcha.
+// SolveRecaptchaV3Proxy uses the provider with the supplied proxy (helps on high sec sites) to fetch the solution of a captcha.
 //
 // The function returns ICaptchaResponse that has .Solution(), .ReportBad() and .ReportGood() that can be used
 // to get the answer or report the quality of the captcha to the provider.
-func (c *CaptchaSolver) SolveRecaptchaV3(ctx context.Context, payload *RecaptchaV3Payload) (ICaptchaResponse, error) {
-	return c.provider.SolveRecaptchaV3(ctx, c.settings, payload)
+func (c *CaptchaSolver) SolveRecaptchaV3Proxy(ctx context.Context, payload *RecaptchaV3Payload) (ICaptchaResponse, error) {
+	return c.provider.SolveRecaptchaV3Proxy(ctx, c.settings, payload)
+}
+
+// SolveRecaptchaV3Proxyless uses the provider to fetch the solution of a captcha.
+//
+// The function returns ICaptchaResponse that has .Solution(), .ReportBad() and .ReportGood() that can be used
+// to get the answer or report the quality of the captcha to the provider.
+func (c *CaptchaSolver) SolveRecaptchaV3Proxyless(ctx context.Context, payload *RecaptchaV3Payload) (ICaptchaResponse, error) {
+	return c.provider.SolveRecaptchaV3Proxyless(ctx, c.settings, payload)
 }
 
 // SolveHCaptcha uses the provider to fetch the solution of a captcha.

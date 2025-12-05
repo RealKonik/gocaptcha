@@ -24,11 +24,11 @@ func TestNewCaptchaSolver(t *testing.T) {
 func TestNewCaptchaSolverTurnstile(t *testing.T) {
 	ctx := context.Background()
 
-	cs := NewCaptchaSolver(NewCustomAntiCaptcha("https://api.anti-captcha.com", "6a0ec931a8e86b6a8bf5ac22c785f938"))
+	cs := NewCaptchaSolver(NewCustomAntiCaptcha("https://api.capmonster.cloud", "d230c188d73d35a2f3c353202c6b67f9"))
 
 	resp, err := cs.SolveTurnstile(ctx, &TurnstilePayload{
-		EndpointUrl: "https://www.popmart.com/au/store-apppointment-event/your-reservationInfo",
-		EndpointKey: "0x4AAAAAABjS33Y7wk11lsWy",
+		EndpointUrl: "https://zachbryanpresale.com",
+		EndpointKey: "0x4AAAAAABkpv4xb6MdfcZRJ",
 	})
 	if err != nil {
 		t.Error(err)

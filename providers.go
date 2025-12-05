@@ -10,7 +10,9 @@ type IProvider interface {
 	SolveRecaptchaV2(ctx context.Context, settings *Settings, payload *RecaptchaV2Payload) (ICaptchaResponse, error)
 
 	// SolveRecaptchaV3 is the implementation of getting the response of a version 3 recaptcha
-	SolveRecaptchaV3(ctx context.Context, settings *Settings, payload *RecaptchaV3Payload) (ICaptchaResponse, error)
+	SolveRecaptchaV3Proxy(ctx context.Context, settings *Settings, payload *RecaptchaV3Payload) (ICaptchaResponse, error)
+
+	SolveRecaptchaV3Proxyless(ctx context.Context, settings *Settings, payload *RecaptchaV3Payload) (ICaptchaResponse, error)
 
 	// SolveHCaptcha is the implementation of getting the response of an HCaptcha captcha
 	SolveHCaptcha(ctx context.Context, settings *Settings, payload *HCaptchaPayload) (ICaptchaResponse, error)
