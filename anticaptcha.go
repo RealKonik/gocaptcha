@@ -99,6 +99,7 @@ func (a *AntiCaptcha) SolveRecaptchaV3Proxyless(
 		"websiteURL": payload.EndpointUrl,
 		"websiteKey": payload.EndpointKey,
 		"minScore":   payload.MinScore,
+		"pageAction": payload.Action,
 	}
 
 	result, err := a.solveTask(ctx, settings, task)
@@ -125,6 +126,7 @@ func (a *AntiCaptcha) SolveRecaptchaV3Proxy(
 		"websiteKey": payload.EndpointKey,
 		"minScore":   payload.MinScore,
 		"proxy":      payload.Proxy,
+		"pageAction": payload.Action,
 	}
 
 	result, err := a.solveTask(ctx, settings, task)
@@ -231,7 +233,7 @@ func (a *AntiCaptcha) createTask(
 	if err != nil {
 		return "", err
 	}
-
+	fmt.Println(string(jsonValue))
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
