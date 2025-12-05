@@ -9,7 +9,7 @@ go get github.com/RealKonik/gocaptcha
 ## Support
 | Type                   | 2Captcha  | AntiCaptcha | CapMonster | CapSolver |
 |:-----------------------|:----------|:------------|:------------|:---------|
-| RecaptchaV2            | ✅        | ✅           | ✅          |          |
+| RecaptchaV2            | ✅        | ✅           | ✅          | ✅       |
 | RecaptchaV3Proxy       | ✅        | ✅           | ✅          | ✅       |
 | RecaptchaV3ProxyLess   | ✅        | ✅           | ✅          | ✅       |
 | Image Captcha          | ✅        | ✅           | ✅          | ✅       |
