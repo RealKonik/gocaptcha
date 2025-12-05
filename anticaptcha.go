@@ -233,7 +233,6 @@ func (a *AntiCaptcha) createTask(
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(string(jsonValue))
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
