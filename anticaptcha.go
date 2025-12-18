@@ -94,12 +94,27 @@ func (a *AntiCaptcha) SolveRecaptchaV3Proxyless(
 	settings *Settings,
 	payload *RecaptchaV3Payload,
 ) (ICaptchaResponse, error) {
+	var captchaType string
+	if payload.IsEnterprise {
+		switch a.baseUrl {
+		case "https://api.capmonster.cloud":
+			return nil, fmt.Errorf("CapMonsterdoes not support ReCaptchaV3 Enterprise tasks")
+		case "https://api.capsolver.com":
+			captchaType = "ReCaptchaV3EnterpriseTaskProxyLess"
+		case "https://api.anti-captcha.com":
+			captchaType = "RecaptchaV3TaskProxyless"
+		}
+	} else {
+		captchaType = "RecaptchaV3TaskProxyless"
+	}
+	fmt.Println(captchaType)
 	task := map[string]any{
-		"type":       "RecaptchaV3TaskProxyless",
-		"websiteURL": payload.EndpointUrl,
-		"websiteKey": payload.EndpointKey,
-		"minScore":   payload.MinScore,
-		"pageAction": payload.Action,
+		"type":         captchaType,
+		"websiteURL":   payload.EndpointUrl,
+		"websiteKey":   payload.EndpointKey,
+		"minScore":     payload.MinScore,
+		"pageAction":   payload.Action,
+		"isEnterprise": payload.IsEnterprise,
 	}
 
 	result, err := a.solveTask(ctx, settings, task)
@@ -120,13 +135,27 @@ func (a *AntiCaptcha) SolveRecaptchaV3Proxy(
 	if payload.Proxy == "" {
 		return nil, errors.New("proxy is required for SolveRecaptchaV3Proxy")
 	}
+	var captchaType string
+	if payload.IsEnterprise {
+		switch a.baseUrl {
+		case "https://api.capmonster.cloud":
+			return nil, fmt.Errorf("CapMonsterdoes not support ReCaptchaV3 Enterprise tasks")
+		case "https://api.capsolver.com":
+			captchaType = "ReCaptchaV3EnterpriseTask"
+		case "https://api.anti-captcha.com":
+			return nil, fmt.Errorf("Anti-Captcha does not support ReCaptchaV3 Enterprise tasks with proxy")
+		}
+	} else {
+		captchaType = "RecaptchaV3Task"
+	}
 	task := map[string]any{
-		"type":       "RecaptchaV3Task",
-		"websiteURL": payload.EndpointUrl,
-		"websiteKey": payload.EndpointKey,
-		"minScore":   payload.MinScore,
-		"proxy":      payload.Proxy,
-		"pageAction": payload.Action,
+		"type":         captchaType,
+		"websiteURL":   payload.EndpointUrl,
+		"websiteKey":   payload.EndpointKey,
+		"minScore":     payload.MinScore,
+		"proxy":        payload.Proxy,
+		"pageAction":   payload.Action,
+		"isEnterprise": payload.IsEnterprise,
 	}
 
 	result, err := a.solveTask(ctx, settings, task)
@@ -176,6 +205,25 @@ func (a *AntiCaptcha) SolveTurnstile(
 		"type":       captchaType,
 		"websiteURL": payload.EndpointUrl,
 		"websiteKey": payload.EndpointKey,
+	}
+
+	result, err := a.solveTask(ctx, settings, task)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (a *AntiCaptcha) SolveWaf(
+	ctx context.Context,
+	settings *Settings,
+	payload *WafPayload,
+) (ICaptchaResponse, error) {
+
+	task := map[string]any{
+		"type":       "AntiAwsWafTaskProxyLess",
+		"websiteURL": payload.EndpointUrl,
 	}
 
 	result, err := a.solveTask(ctx, settings, task)
@@ -284,6 +332,7 @@ func (a *AntiCaptcha) getTaskResult(
 		RecaptchaResponse string `json:"gRecaptchaResponse"`
 		Text              string `json:"text"`
 		Token             string `json:"token"`
+		Cookie            string `json:"cookie"`
 	}
 
 	type resultResponse struct {
@@ -341,6 +390,9 @@ func (a *AntiCaptcha) getTaskResult(
 	}
 	if respJson.Solution.RecaptchaResponse != "" {
 		return respJson.Solution.RecaptchaResponse, nil
+	}
+	if respJson.Solution.Cookie != "" {
+		return respJson.Solution.Cookie, nil
 	}
 
 	return "", nil

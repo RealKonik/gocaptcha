@@ -34,12 +34,16 @@ type RecaptchaV3Payload struct {
 }
 
 type TurnstilePayload struct {
-	// EndpointUrl is the endpoint that has FunCaptcha Protection
+	// EndpointUrl is the endpoint that has turnstile Protection
 	EndpointUrl string
 
-	// EndpointKey is the Recaptcha Key
-	// Can be found on the Endpoint URL page
+	// EndpointKey is the cf Key
 	EndpointKey string
+}
+
+type WafPayload struct {
+	// EndpointUrl is the endpoint that has waf Protection
+	EndpointUrl string
 }
 
 type ImageCaptchaPayload struct {

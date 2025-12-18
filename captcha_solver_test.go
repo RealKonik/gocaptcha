@@ -2,6 +2,7 @@ package gocaptcha
 
 import (
 	"context"
+	"fmt"
 	"testing"
 )
 
@@ -15,6 +16,22 @@ func TestNewCaptchaSolver(t *testing.T) {
 		EndpointKey: "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-",
 	})
 	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(resp.Solution()) // gets the answer or recaptcha token etc
+}
+
+func TestPbd(t *testing.T) {
+	ctx := context.Background()
+
+	cs := NewCaptchaSolver(NewCapSolver("CAP-"))
+
+	resp, err := cs.SolveWaf(ctx, &WafPayload{
+		EndpointUrl: "http",
+	})
+	if err != nil {
+		fmt.Println(err)
 		t.Error(err)
 	}
 

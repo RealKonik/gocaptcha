@@ -66,6 +66,10 @@ func (c *CaptchaSolver) SolveTurnstile(ctx context.Context, payload *TurnstilePa
 	return c.provider.SolveTurnstile(ctx, c.settings, payload)
 }
 
+func (c *CaptchaSolver) SolveWaf(ctx context.Context, payload *WafPayload) (ICaptchaResponse, error) {
+	return c.provider.SolveWaf(ctx, c.settings, payload)
+}
+
 // SetClient will set the client that is used when interacting with APIs of providers.
 func (c *CaptchaSolver) SetClient(client *http.Client) {
 	c.settings.client = client

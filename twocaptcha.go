@@ -139,6 +139,10 @@ func (t *TwoCaptcha) SolveTurnstile(ctx context.Context, settings *Settings, pay
 	return result, nil
 }
 
+func (t *TwoCaptcha) SolveWaf(ctx context.Context, settings *Settings, payload *WafPayload) (ICaptchaResponse, error) {
+	return nil, errors.New("WAF solving not supported by 2Captcha")
+}
+
 func (t *TwoCaptcha) report(action, taskId string, settings *Settings) func(ctx context.Context) error {
 	type response struct {
 		Status    int    `json:"status"`
