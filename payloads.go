@@ -66,3 +66,11 @@ type HCaptchaPayload struct {
 	// Can be found on the Endpoint URL page
 	EndpointKey string
 }
+
+type AntiCloudflarePayload struct {
+	// WebsiteURL is the URL of the page protected by Cloudflare
+	WebsiteURL string
+
+	// Proxy is required for AntiCloudflare tasks (format: http://user:pass@ip:port)
+	Proxy string
+}

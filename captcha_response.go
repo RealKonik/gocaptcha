@@ -66,3 +66,31 @@ func (a *CaptchaResponse) ReportGood(ctx context.Context) error {
 }
 
 var _ ICaptchaResponse = (*CaptchaResponse)(nil)
+
+// IAntiCloudflareResponse extends ICaptchaResponse with Cloudflare-specific fields
+type IAntiCloudflareResponse interface {
+	ICaptchaResponse
+
+	// UserAgent returns the User-Agent that must be used with the cf_clearance cookie
+	UserAgent() string
+
+	// Cookies returns all cookies from the solution (including cf_clearance)
+	Cookies() map[string]string
+}
+
+// AntiCloudflareResponse contains the solution for CF Managed Challenge
+type AntiCloudflareResponse struct {
+	CaptchaResponse
+	userAgent string
+	cookies   map[string]string
+}
+
+func (a *AntiCloudflareResponse) UserAgent() string {
+	return a.userAgent
+}
+
+func (a *AntiCloudflareResponse) Cookies() map[string]string {
+	return a.cookies
+}
+
+var _ IAntiCloudflareResponse = (*AntiCloudflareResponse)(nil)
