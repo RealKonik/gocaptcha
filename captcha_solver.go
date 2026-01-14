@@ -70,6 +70,14 @@ func (c *CaptchaSolver) SolveWaf(ctx context.Context, payload *WafPayload) (ICap
 	return c.provider.SolveWaf(ctx, c.settings, payload)
 }
 
+// SolveAntiCloudflare uses the provider to solve CF Managed Challenge.
+//
+// Returns IAntiCloudflareResponse with cf_clearance cookie and UserAgent.
+// The UserAgent MUST be used for subsequent requests with the cf_clearance cookie.
+func (c *CaptchaSolver) SolveAntiCloudflare(ctx context.Context, payload *AntiCloudflarePayload) (IAntiCloudflareResponse, error) {
+	return c.provider.SolveAntiCloudflare(ctx, c.settings, payload)
+}
+
 // SetClient will set the client that is used when interacting with APIs of providers.
 func (c *CaptchaSolver) SetClient(client *http.Client) {
 	c.settings.client = client

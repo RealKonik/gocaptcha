@@ -143,6 +143,104 @@ func (t *TwoCaptcha) SolveWaf(ctx context.Context, settings *Settings, payload *
 	return nil, errors.New("WAF solving not supported by 2Captcha")
 }
 
+func (t *TwoCaptcha) SolveAntiCloudflare(ctx context.Context, settings *Settings, payload *AntiCloudflarePayload) (IAntiCloudflareResponse, error) {
+	if payload.Proxy == "" {
+		return nil, errors.New("proxy is required for AntiCloudflare tasks")
+	}
+
+	task := &url.Values{}
+	task.Set("method", "anticloudflare")
+	task.Set("pageurl", payload.WebsiteURL)
+	task.Set("proxy", payload.Proxy)
+
+	taskId, err := t.createTask(ctx, settings, task)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := internal.SleepWithContext(ctx, settings.initialWaitTime); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < settings.maxRetries; i++ {
+		result, err := t.getAntiCloudflareResult(ctx, settings, taskId)
+		if err != nil {
+			return nil, err
+		}
+
+		if result != nil {
+			return result, nil
+		}
+
+		if err := internal.SleepWithContext(ctx, settings.pollInterval); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("max tries exceeded")
+}
+
+func (t *TwoCaptcha) getAntiCloudflareResult(ctx context.Context, settings *Settings, taskId string) (*AntiCloudflareResponse, error) {
+	type cfResponse struct {
+		Status    int    `json:"status"`
+		Request   string `json:"request"`
+		ErrorText string `json:"error_text"`
+		// AntiCloudflare specific fields
+		Cookies   map[string]string `json:"cookies"`
+		UserAgent string            `json:"useragent"`
+	}
+
+	body := &url.Values{}
+	body.Set("key", t.apiKey)
+	body.Set("action", "get")
+	body.Set("json", "1")
+	body.Set("id", taskId)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%v/res.php?%v", t.baseUrl, body.Encode()), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := settings.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var jsonResp cfResponse
+	if err := json.Unmarshal(respBody, &jsonResp); err != nil {
+		return nil, err
+	}
+
+	if jsonResp.Status == 0 {
+		// captcha not ready yet
+		if jsonResp.ErrorText == "" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%v: %v", jsonResp.Request, jsonResp.ErrorText)
+	}
+
+	// Extract cf_clearance from cookies as the solution
+	cfClearance := ""
+	if jsonResp.Cookies != nil {
+		cfClearance = jsonResp.Cookies["cf_clearance"]
+	}
+
+	return &AntiCloudflareResponse{
+		CaptchaResponse: CaptchaResponse{
+			solution: cfClearance,
+			taskId:   taskId,
+		},
+		userAgent: jsonResp.UserAgent,
+		cookies:   jsonResp.Cookies,
+	}, nil
+}
+
 func (t *TwoCaptcha) report(action, taskId string, settings *Settings) func(ctx context.Context) error {
 	type response struct {
 		Status    int    `json:"status"`

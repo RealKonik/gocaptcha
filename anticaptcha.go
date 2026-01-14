@@ -234,6 +234,60 @@ func (a *AntiCaptcha) SolveWaf(
 	return result, nil
 }
 
+func (a *AntiCaptcha) SolveAntiCloudflare(
+	ctx context.Context,
+	settings *Settings,
+	payload *AntiCloudflarePayload,
+) (IAntiCloudflareResponse, error) {
+	if payload.Proxy == "" {
+		return nil, errors.New("proxy is required for AntiCloudflare tasks")
+	}
+
+	var captchaType string
+	switch a.baseUrl {
+	case "https://api.capsolver.com":
+		captchaType = "AntiCloudflareTask"
+	case "https://api.capmonster.cloud":
+		return nil, fmt.Errorf("CapMonster does not support AntiCloudflare tasks")
+	case "https://api.anti-captcha.com":
+		captchaType = "AntiCloudflareTask"
+	default:
+		captchaType = "AntiCloudflareTask"
+	}
+
+	task := map[string]any{
+		"type":       captchaType,
+		"websiteURL": payload.WebsiteURL,
+		"proxy":      payload.Proxy,
+	}
+
+	taskId, err := a.createTask(ctx, settings, task)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := internal.SleepWithContext(ctx, settings.initialWaitTime); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < settings.maxRetries; i++ {
+		result, err := a.getAntiCloudflareResult(ctx, settings, taskId)
+		if err != nil {
+			return nil, err
+		}
+
+		if result != nil {
+			return result, nil
+		}
+
+		if err := internal.SleepWithContext(ctx, settings.pollInterval); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("max tries exceeded")
+}
+
 func (a *AntiCaptcha) solveTask(
 	ctx context.Context,
 	settings *Settings,
@@ -321,6 +375,78 @@ func (a *AntiCaptcha) createTask(
 
 	// if you encounter this error with a custom provider, please open an issue
 	return "", errors.New("unexpected taskId type, expecting string or float64")
+}
+
+func (a *AntiCaptcha) getAntiCloudflareResult(
+	ctx context.Context,
+	settings *Settings,
+	taskId string,
+) (*AntiCloudflareResponse, error) {
+	type cfSolution struct {
+		Cookies   map[string]string `json:"cookies"`
+		UserAgent string            `json:"userAgent"`
+	}
+
+	type resultResponse struct {
+		Status           string     `json:"status"`
+		ErrorID          int        `json:"errorId"`
+		ErrorDescription string     `json:"errorDescription"`
+		Solution         cfSolution `json:"solution"`
+	}
+
+	resultData := map[string]string{"clientKey": a.apiKey, "taskId": taskId}
+	jsonValue, err := json.Marshal(resultData)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		a.baseUrl+"/getTaskResult",
+		bytes.NewBuffer(jsonValue),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := settings.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var respJson resultResponse
+	if err := json.Unmarshal(respBody, &respJson); err != nil {
+		return nil, err
+	}
+
+	if respJson.ErrorID != 0 {
+		return nil, errors.New(respJson.ErrorDescription)
+	}
+
+	if respJson.Status != "ready" {
+		return nil, nil
+	}
+
+	// Extract cf_clearance from cookies as the solution
+	cfClearance := ""
+	if respJson.Solution.Cookies != nil {
+		cfClearance = respJson.Solution.Cookies["cf_clearance"]
+	}
+
+	return &AntiCloudflareResponse{
+		CaptchaResponse: CaptchaResponse{
+			solution: cfClearance,
+			taskId:   taskId,
+		},
+		userAgent: respJson.Solution.UserAgent,
+		cookies:   respJson.Solution.Cookies,
+	}, nil
 }
 
 func (a *AntiCaptcha) getTaskResult(

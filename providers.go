@@ -21,4 +21,7 @@ type IProvider interface {
 	SolveTurnstile(ctx context.Context, settings *Settings, payload *TurnstilePayload) (ICaptchaResponse, error)
 
 	SolveWaf(ctx context.Context, settings *Settings, payload *WafPayload) (ICaptchaResponse, error)
+
+	// SolveAntiCloudflare solves CF Managed Challenge (returns cf_clearance + UserAgent)
+	SolveAntiCloudflare(ctx context.Context, settings *Settings, payload *AntiCloudflarePayload) (IAntiCloudflareResponse, error)
 }
