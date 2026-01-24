@@ -56,6 +56,10 @@ type ImageCaptchaPayload struct {
 	// InstructionsForSolver should be set if the human solver needs additional information
 	// about how to solve the captcha
 	InstructionsForSolver string
+
+	// Module specifies specialized recognition module (CapSolver only)
+	// Example: "queueit" for Queue-IT captcha recognition
+	Module string
 }
 
 type HCaptchaPayload struct {

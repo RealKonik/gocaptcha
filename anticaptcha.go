@@ -59,6 +59,21 @@ func (a *AntiCaptcha) SolveImageCaptcha(
 		"case": payload.CaseSensitive,
 	}
 
+	// Add module if specified (e.g., "queueit" for Queue-IT specialized recognition)
+	if payload.Module != "" {
+		task["module"] = payload.Module
+	}
+
+	// CapSolver returns ImageToTextTask results synchronously
+	if a.baseUrl == "https://api.capsolver.com" {
+		result, err := a.solveTaskSync(ctx, settings, task)
+		if err != nil {
+			return nil, err
+		}
+		result.reportBad = a.report("/reportIncorrectImageCaptcha", result.taskId, settings)
+		return result, nil
+	}
+
 	result, err := a.solveTask(ctx, settings, task)
 	if err != nil {
 		return nil, err
@@ -232,6 +247,95 @@ func (a *AntiCaptcha) SolveWaf(
 	}
 
 	return result, nil
+}
+
+// solveTaskSync handles CapSolver's synchronous response for ImageToTextTask
+// CapSolver returns the solution directly in createTask response instead of requiring polling
+func (a *AntiCaptcha) solveTaskSync(
+	ctx context.Context,
+	settings *Settings,
+	task map[string]any,
+) (*CaptchaResponse, error) {
+	type syncResponse struct {
+		ErrorID          int    `json:"errorId"`
+		ErrorDescription string `json:"errorDescription"`
+		TaskID           string `json:"taskId"`
+		Status           string `json:"status"`
+		Solution         struct {
+			Text string `json:"text"`
+		} `json:"solution"`
+	}
+
+	jsonValue, err := json.Marshal(map[string]any{"clientKey": a.apiKey, "task": task})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseUrl+"/createTask", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("content-type", "application/json")
+
+	resp, err := settings.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result syncResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, err
+	}
+
+	if result.ErrorID != 0 {
+		return nil, errors.New(result.ErrorDescription)
+	}
+
+	// CapSolver returns solution directly for ImageToTextTask
+	if result.Status == "ready" && result.Solution.Text != "" {
+		return &CaptchaResponse{solution: result.Solution.Text, taskId: result.TaskID}, nil
+	}
+
+	// Fallback to polling if taskId returned but no immediate solution
+	if result.TaskID != "" {
+		return a.pollTask(ctx, settings, result.TaskID)
+	}
+
+	return nil, errors.New("no solution returned")
+}
+
+// pollTask polls for task result (used as fallback for sync tasks)
+func (a *AntiCaptcha) pollTask(
+	ctx context.Context,
+	settings *Settings,
+	taskId string,
+) (*CaptchaResponse, error) {
+	if err := internal.SleepWithContext(ctx, settings.initialWaitTime); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < settings.maxRetries; i++ {
+		answer, err := a.getTaskResult(ctx, settings, taskId)
+		if err != nil {
+			return nil, err
+		}
+
+		if answer != "" {
+			return &CaptchaResponse{solution: answer, taskId: taskId}, nil
+		}
+
+		if err := internal.SleepWithContext(ctx, settings.pollInterval); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("max tries exceeded")
 }
 
 func (a *AntiCaptcha) solveTask(
